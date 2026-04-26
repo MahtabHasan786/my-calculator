@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Calculator App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1a1a2e;
+      font-family: 'Share Tech Mono', monospace;
+    }
+
+    .calc-wrap {
+      background: #16213e;
+      border-radius: 24px;
+      padding: 28px 24px 24px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+      width: 320px;
+    }
+
+    .display {
+      background: #0f0f1a;
+      border-radius: 14px;
+      padding: 18px 20px 14px;
+      margin-bottom: 22px;
+      text-align: right;
+      min-height: 90px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .display .expr {
+      font-size: 13px;
+      color: #5a6a8a;
+      min-height: 18px;
+      margin-bottom: 6px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .display .result {
+      font-size: 38px;
+      color: #e2e8f0;
+      letter-spacing: 1px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      height: 62px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 18px;
+      cursor: pointer;
+      transition: transform 0.08s, box-shadow 0.08s, background 0.1s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button:active { transform: scale(0.93); }
+
+    /* Number buttons */
+    .btn-num {
+      background: #1e2d4a;
+      color: #c8d8f0;
+      box-shadow: 0 4px 0 #0d1a30;
+    }
+    .btn-num:hover { background: #253656; }
+
+    /* Operator buttons */
+    .btn-op {
+      background: #1a3a5c;
+      color: #60aaff;
+      box-shadow: 0 4px 0 #0a1e33;
+    }
+    .btn-op:hover { background: #1f4470; }
+
+    /* Equals button */
+    .btn-eq {
+      background: #2563eb;
+      color: #fff;
+      box-shadow: 0 4px 0 #1040aa;
+      font-size: 22px;
+    }
+    .btn-eq:hover { background: #1d4ed8; }
+
+    /* Clear / special */
+    .btn-clear {
+      background: #3b1a1a;
+      color: #ff6b6b;
+      box-shadow: 0 4px 0 #1a0808;
+    }
+    .btn-clear:hover { background: #4d2020; }
+
+    .btn-zero { grid-column: span 2; }
+
+    /* Ripple */
+    button::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.08);
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    button:active::after { opacity: 1; }
+  </style>
+</head>
+<body>
+<div class="calc-wrap">
+  <div class="display">
+    <div class="expr" id="expr"></div>
+    <div class="result" id="result">0</div>
+  </div>
+  <div class="buttons">
+    <button class="btn-clear" onclick="clearAll()">AC</button>
+    <button class="btn-op"    onclick="toggleSign()">+/−</button>
+    <button class="btn-op"    onclick="percent()">%</button>
+    <button class="btn-op"    onclick="inputOp('/')">÷</button>
+
+    <button class="btn-num" onclick="inputNum('7')">7</button>
+    <button class="btn-num" onclick="inputNum('8')">8</button>
+    <button class="btn-num" onclick="inputNum('9')">9</button>
+    <button class="btn-op"  onclick="inputOp('*')">×</button>
+
+    <button class="btn-num" onclick="inputNum('4')">4</button>
+    <button class="btn-num" onclick="inputNum('5')">5</button>
+    <button class="btn-num" onclick="inputNum('6')">6</button>
+    <button class="btn-op"  onclick="inputOp('-')">−</button>
+
+    <button class="btn-num" onclick="inputNum('1')">1</button>
+    <button class="btn-num" onclick="inputNum('2')">2</button>
+    <button class="btn-num" onclick="inputNum('3')">3</button>
+    <button class="btn-op"  onclick="inputOp('+')">+</button>
+
+    <button class="btn-num btn-zero" onclick="inputNum('0')">0</button>
+    <button class="btn-num" onclick="inputDot()">.</button>
+    <button class="btn-eq"  onclick="calculate()">=</button>
+  </div>
+</div>
+
+<script>
+  let current = '0', expression = '', justCalc = false;
+  const res = document.getElementById('result');
+  const expr = document.getElementById('expr');
+
+  function update() {
+    res.textContent = current.length > 10 ? parseFloat(current).toExponential(4) : current;
+    expr.textContent = expression;
+  }
+
+  function inputNum(n) {
+    if (justCalc) { current = n; expression = ''; justCalc = false; }
+    else current = current === '0' ? n : current + n;
+    update();
+  }
+
+  function inputDot() {
+    if (justCalc) { current = '0.'; expression = ''; justCalc = false; }
+    else if (!current.includes('.')) current += '.';
+    update();
+  }
+
+  function inputOp(op) {
+    justCalc = false;
+    const symbols = { '/': '÷', '*': '×', '-': '−', '+': '+' };
+    expression = current + ' ' + symbols[op];
+    current = '0';
+    window._op = op;
+    window._prev = parseFloat(expression);
+    update();
+  }
+
+  function calculate() {
+    if (!window._op) return;
+    const a = window._prev, b = parseFloat(current);
+    let r;
+    if (window._op === '/') r = b === 0 ? 'Error' : a / b;
+    else if (window._op === '*') r = a * b;
+    else if (window._op === '-') r = a - b;
+    else r = a + b;
+    expression = expression + ' ' + current + ' =';
+    current = r === 'Error' ? 'Error' : String(parseFloat(r.toFixed(10)));
+    window._op = null; window._prev = null;
+    justCalc = true;
+    update();
+  }
+
+  function clearAll() { current = '0'; expression = ''; window._op = null; justCalc = false; update(); }
+  function toggleSign() { current = current.startsWith('-') ? current.slice(1) : '-' + current; update(); }
+  function percent() { current = String(parseFloat(current) / 100); update(); }
+</script>
+</body>
+</html>
